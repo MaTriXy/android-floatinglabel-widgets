@@ -1,4 +1,4 @@
-package com.marvinlabs.widget.floatinglabel.edittext;
+package com.marvinlabs.widget.floatinglabel.autocomplete;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
@@ -6,11 +6,13 @@ import android.content.res.TypedArray;
 import android.graphics.Typeface;
 import android.os.Parcelable;
 import android.text.Editable;
-import android.text.InputType;
 import android.text.TextWatcher;
 import android.text.method.KeyListener;
 import android.util.AttributeSet;
-import android.widget.EditText;
+import android.view.ViewGroup;
+import android.widget.AutoCompleteTextView;
+import android.widget.Filterable;
+import android.widget.ListAdapter;
 import android.widget.TextView;
 
 import com.marvinlabs.widget.floatinglabel.FloatingLabelTextViewBase;
@@ -21,12 +23,12 @@ import com.marvinlabs.widget.floatinglabel.anim.TextViewLabelAnimator;
 /**
  * An implementation of the floating label input widget for Android's EditText
  * <p/>
- * Created by Vincent Mimoun-Prat @ MarvinLabs, 28/08/2014.
+ * Created by Vincent Mimoun-Prat @ MarvinLabs, 20/10/2014.
  */
-public class FloatingLabelEditText extends FloatingLabelTextViewBase<EditText> {
+public class FloatingLabelAutoCompleteTextView extends FloatingLabelTextViewBase<AutoCompleteTextView> {
 
     public interface EditTextListener {
-        public void onTextChanged(FloatingLabelEditText source, String text);
+        public void onTextChanged(FloatingLabelAutoCompleteTextView source, String text);
     }
 
     /**
@@ -38,15 +40,15 @@ public class FloatingLabelEditText extends FloatingLabelTextViewBase<EditText> {
     // Lifecycle
     // ==
 
-    public FloatingLabelEditText(Context context) {
+    public FloatingLabelAutoCompleteTextView(Context context) {
         super(context);
     }
 
-    public FloatingLabelEditText(Context context, AttributeSet attrs) {
+    public FloatingLabelAutoCompleteTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public FloatingLabelEditText(Context context, AttributeSet attrs, int defStyle) {
+    public FloatingLabelAutoCompleteTextView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
     }
 
@@ -58,25 +60,44 @@ public class FloatingLabelEditText extends FloatingLabelTextViewBase<EditText> {
     protected void afterLayoutInflated(Context context, AttributeSet attrs, int defStyle) {
         super.afterLayoutInflated(context, attrs, defStyle);
 
-        final int inputType;
+        final CharSequence completionHint;
+        final int completionThreshold;
+        final int popupBackground;
+        final int dropDownWidth;
+        final int dropDownHeight;
 
         if (attrs == null) {
-            inputType = InputType.TYPE_CLASS_TEXT;
+            completionHint = "";
+            completionThreshold = 1;
+            dropDownHeight = ViewGroup.LayoutParams.WRAP_CONTENT;
+            dropDownWidth = ViewGroup.LayoutParams.WRAP_CONTENT;
+            popupBackground = getDefaultPopupBackgroundResId();
         } else {
-            TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.FloatingLabelEditText, defStyle, 0);
-            inputType = a.getInt(R.styleable.FloatingLabelEditText_android_inputType, InputType.TYPE_CLASS_TEXT);
+            TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.FloatingLabelAutoCompleteTextView, defStyle, 0);
+            completionHint = a.getText(R.styleable.FloatingLabelAutoCompleteTextView_android_completionHint);
+            completionThreshold = a.getInt(R.styleable.FloatingLabelAutoCompleteTextView_android_completionThreshold, 1);
+            dropDownHeight = a.getDimensionPixelSize(R.styleable.FloatingLabelAutoCompleteTextView_android_dropDownHeight, ViewGroup.LayoutParams.WRAP_CONTENT);
+            dropDownWidth = a.getDimensionPixelSize(R.styleable.FloatingLabelAutoCompleteTextView_android_dropDownWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+            popupBackground = a.getResourceId(R.styleable.FloatingLabelAutoCompleteTextView_android_popupBackground, getDefaultPopupBackgroundResId());
             a.recycle();
         }
 
-        final EditText inputWidget = getInputWidget();
-
-        inputWidget.setInputType(inputType);
+        final AutoCompleteTextView inputWidget = getInputWidget();
+        inputWidget.setCompletionHint(completionHint);
+        inputWidget.setThreshold(completionThreshold);
+        inputWidget.setDropDownWidth(dropDownWidth);
+        inputWidget.setDropDownHeight(dropDownHeight);
+        inputWidget.setDropDownBackgroundResource(popupBackground);
         inputWidget.addTextChangedListener(new EditTextWatcher());
+    }
+
+    protected int getDefaultPopupBackgroundResId() {
+        return R.drawable.bg_dropdown_panel;
     }
 
     @Override
     protected int getDefaultLayoutId() {
-        return R.layout.flw_widget_floating_label_edittext;
+        return R.layout.flw_widget_floating_label_autocomplete_textview;
     }
 
     @Override
@@ -96,13 +117,27 @@ public class FloatingLabelEditText extends FloatingLabelTextViewBase<EditText> {
     }
 
     @Override
-    protected LabelAnimator<EditText> getDefaultLabelAnimator() {
-        return new TextViewLabelAnimator<EditText>();
+    protected LabelAnimator<AutoCompleteTextView> getDefaultLabelAnimator() {
+        return new TextViewLabelAnimator<AutoCompleteTextView>();
     }
 
     // =============================================================================================
     // Delegate methods for the input widget
     // ==
+
+    /**
+     * Delegate method for the input widget
+     */
+    public void setInputWidgetThreshold(int threshold) {
+        getInputWidget().setThreshold(threshold);
+    }
+
+    /**
+     * Delegate method for the input widget
+     */
+    public <T extends ListAdapter & Filterable> void setInputWidgetAdapter(T adapter) {
+        getInputWidget().setAdapter(adapter);
+    }
 
     /**
      * Delegate method for the input widget
@@ -236,7 +271,7 @@ public class FloatingLabelEditText extends FloatingLabelTextViewBase<EditText> {
     private class EditTextWatcher implements TextWatcher {
         @Override
         public void afterTextChanged(Editable s) {
-            FloatingLabelEditText.this.onTextChanged(s.toString());
+            FloatingLabelAutoCompleteTextView.this.onTextChanged(s.toString());
         }
 
         @Override
