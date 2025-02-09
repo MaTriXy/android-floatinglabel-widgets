@@ -7,12 +7,12 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.github.dcendents:android-maven-plugin:1.0'
+        classpath 'com.github.dcendents:android-maven-plugin:1.2'
     }
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'android-maven'
+apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'signing'
 
 android {
@@ -47,15 +47,6 @@ android.libraryVariants.all { variant ->
     task("javadoc${variant.name.capitalize()}", type: Javadoc) {
         description "Generates Javadoc for $variant.name."
         source = variant.javaCompile.source
-
-        if (android.plugin.hasProperty("sdkHandler")) {
-            androidPath = "${android.plugin.sdkHandler.sdkFolder}"
-        } else {
-            androidPath = "${android.plugin.sdkDirectory}"
-        }
-
-        ext.androidJar = androidPath + "/platforms/${android.compileSdkVersion}/android.jar"
-        classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar)
     }
 
     task("bundleJavadoc${variant.name.capitalize()}", type: Jar) {
@@ -67,7 +58,7 @@ android.libraryVariants.all { variant ->
 
 task sourcesJar(type: Jar) {
     classifier = 'sources'
-    from android.sourceSets.main.java
+    from android.sourceSets.main.java.srcDirs
 }
 
 task jar(type: Jar) {
@@ -87,7 +78,7 @@ artifacts {
 
 task wrapper(type: Wrapper) {
     description "Generates the gradle wrapper"
-    gradleVersion = "1.10"
+    gradleVersion = "2.2.1"
 }
 
 signing {
